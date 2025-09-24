@@ -1,0 +1,72 @@
+cmake_minimum_required(VERSION 3.16)
+project(CPP_Fundamentals VERSION 1.0.0 LANGUAGES CXX)
+
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Set build type
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
+
+# Compiler flags
+if(MSVC)
+    add_compile_options(/W4)
+else()
+    add_compile_options(-Wall -Wextra -Wpedantic)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        add_compile_options(-g -O0)
+    else()
+        add_compile_options(-O3)
+    endif()
+endif()
+
+# Include directories
+include_directories(src)
+include_directories(utils)
+
+# Find required packages
+find_package(Threads REQUIRED)
+
+# Create executables for each module
+add_executable(syntax_basics src/01_fundamentals/syntax_basics.cpp)
+add_executable(data_types src/01_fundamentals/data_types.cpp)  
+add_executable(control_flow src/01_fundamentals/control_flow.cpp)
+add_executable(functions_demo src/01_fundamentals/functions.cpp)
+add_executable(classes_demo src/01_fundamentals/classes.cpp)
+
+add_executable(stack_heap src/02_memory_management/stack_heap.cpp)
+add_executable(smart_pointers src/02_memory_management/smart_pointers.cpp)
+add_executable(memory_leaks src/02_memory_management/memory_leaks.cpp)
+add_executable(custom_allocators src/02_memory_management/custom_allocators.cpp)
+
+# If Google Test is available, build tests
+find_package(GTest QUIET)
+if(GTest_FOUND)
+    enable_testing()
+    
+    add_executable(all_tests
+        tests/test_fundamentals.cpp
+        tests/test_memory.cpp
+        tests/test_stl.cpp
+        tests/test_algorithms.cpp
+        tests/test_templates.cpp
+        tests/test_concurrency.cpp
+    )
+    
+    target_link_libraries(all_tests
+        GTest::gtest_main
+        GTest::gtest
+        Threads::Threads
+    )
+    
+    include(GoogleTest)
+    gtest_discover_tests(all_tests)
+    
+    message(STATUS "Google Test found - unit tests enabled")
+else()
+    message(STATUS "Google Test not found - unit tests disabled")
+    message(STATUS "To enable tests, install Google Test or use the main CMakeLists.txt with FetchContent")
+endif()

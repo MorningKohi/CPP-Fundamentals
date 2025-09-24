@@ -1,0 +1,88 @@
+name: C++ Learning Environment CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        compiler: [g++, clang++]
+        std: [c++17, c++20]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake
+        if [ "${{ matrix.compiler }}" = "clang++" ]; then
+          sudo apt-get install -y clang
+        fi
+
+    - name: Set compiler
+      run: |
+        if [ "${{ matrix.compiler }}" = "clang++" ]; then
+          echo "CXX=clang++" >> $GITHUB_ENV
+        else
+          echo "CXX=g++" >> $GITHUB_ENV
+        fi
+
+    - name: Build with Makefile
+      run: |
+        make syntax types control functions classes
+        
+    - name: Test executables
+      run: |
+        ./bin/syntax_basics > /dev/null
+        ./bin/data_types > /dev/null
+        ./bin/control_flow > /dev/null
+        ./bin/functions_demo > /dev/null
+        ./bin/classes_demo > /dev/null
+
+    - name: Build memory management examples
+      run: |
+        ${{ env.CXX }} -std=${{ matrix.std }} -Wall -Wextra -I. -o bin/smart_pointers src/02_memory_management/smart_pointers.cpp
+        ${{ env.CXX }} -std=${{ matrix.std }} -Wall -Wextra -I. -o bin/stack_heap src/02_memory_management/stack_heap.cpp
+        ${{ env.CXX }} -std=${{ matrix.std }} -Wall -Wextra -I. -o bin/memory_leaks src/02_memory_management/memory_leaks.cpp
+        ${{ env.CXX }} -std=${{ matrix.std }} -Wall -Wextra -I. -o bin/custom_allocators src/02_memory_management/custom_allocators.cpp
+
+    - name: Test memory management
+      run: |
+        ./bin/smart_pointers > /dev/null
+        ./bin/stack_heap > /dev/null
+        ./bin/memory_leaks > /dev/null
+        ./bin/custom_allocators > /dev/null
+
+    - name: Static analysis with cppcheck (optional)
+      continue-on-error: true
+      run: |
+        sudo apt-get install -y cppcheck
+        cppcheck --enable=all --std=${{ matrix.std }} --suppress=missingIncludeSystem src/ || true
+
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Check documentation
+      run: |
+        # Verify README exists and has content
+        test -f README.md
+        test -s README.md
+        echo "Documentation check passed"
+        
+    - name: Verify project structure
+      run: |
+        test -d src/01_fundamentals
+        test -d src/02_memory_management  
+        test -d tests
+        test -f Makefile
+        test -f CMakeLists.txt
+        echo "Project structure verified"
