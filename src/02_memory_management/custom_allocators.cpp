@@ -112,6 +112,7 @@ public:
     void deallocate(pointer ptr, size_type n) {
         // Pool allocator doesn't support individual deallocation
         // In a real implementation, you might track allocations
+        (void)ptr; // Suppress unused parameter warning
         std::cout << "Pool deallocate called (no-op for " << n << " items)\n";
     }
     
@@ -244,11 +245,12 @@ public:
     }
     
     void deallocate(pointer ptr, size_type n) {
-        std::free(ptr);
         deallocation_count_++;
         
-        std::cout << "Debug deallocated " << n << " objects at " << ptr 
+        std::cout << "Debug deallocated " << n << " objects at " << static_cast<void*>(ptr)
                   << " [total: " << deallocation_count_ << "]\n";
+        
+        std::free(ptr);
     }
     
     static void report() {
@@ -361,9 +363,9 @@ void demonstrate_stack_allocator() {
     StackAllocator<1024> stack_alloc;
     
     // Allocate some memory blocks
-    void* ptr1 = stack_alloc.allocate(100);
+    [[maybe_unused]] void* ptr1 = stack_alloc.allocate(100);
     void* ptr2 = stack_alloc.allocate(200);
-    void* ptr3 = stack_alloc.allocate(50);
+    [[maybe_unused]] void* ptr3 = stack_alloc.allocate(50);
     
     std::cout << "Stack usage: " << stack_alloc.used() 
               << "/" << (stack_alloc.used() + stack_alloc.available()) << " bytes\n";
